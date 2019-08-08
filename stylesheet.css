@@ -1,0 +1,62 @@
+body {
+    background-color: beige;
+    user-select: none;
+}
+
+#container {
+    display: inline-block;
+}
+
+#board {
+    background-color: yellow;
+    border: 1px solid black;
+    margin-bottom: 20px;
+}
+
+.column {
+    display: inline-block;
+    position: relative;
+    cursor: pointer;
+    margin: 0 10px;
+}
+
+.square,
+.piece {
+    width: 50px;
+    height: 50px;
+    border-radius: 25px;
+}
+
+.square.player1,
+.piece.player1 {
+    background-color: red;
+}
+
+.square.player2,
+.piece.player2 {
+    background-color: black;
+}
+
+.square {
+    background-color: white;
+    border: 1px solid black;
+    margin: 10px 0;
+}
+
+.piece {
+    position: absolute;
+}
+
+#turn-restart {
+    overflow: auto;
+}
+
+#turn {
+    float: left;
+    font-size: 24px;
+}
+
+#restart {
+    float: right;
+    font-size: 18px;
+}
