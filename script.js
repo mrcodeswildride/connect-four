@@ -1,184 +1,153 @@
-// initialize variables
-var turn = 1;
-var moving = false;
-var gameEnded = false;
+let columns = document.getElementsByClassName(`column`)
+let squares = document.getElementsByClassName(`square`)
+let turnParagraph = document.getElementById(`turnParagraph`)
 
-// two-dimensional array to represent where the pieces are
-var boardData = [
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0],
-    [0, 0, 0, 0, 0, 0]
-];
+let turn = `Red`
+let moving = false
+let gameOver = false
+let intervalId
 
-// get game elements
-var columns = document.getElementsByClassName('column');
-var turnLabel = document.getElementById('turn');
-var restartButton = document.getElementById('restart');
-
-// activate each column
-for (var i = 0; i < columns.length; i++) {
-    columns[i].addEventListener('click', function(event) {
-        if (!moving && !gameEnded) {
-            // find the corresponding column number
-            var index = parseInt(this.getAttribute('data-index'), 10);
-
-            // find the corresponding column
-            var column = columns.item(index);
-
-            // count how many pieces are already in the column
-            var numPieces = getNumPieces(column);
-
-            if (numPieces < 6) { // drop a piece only if the column is not full
-                // set variable to prevent user interaction until piece is done falling
-                moving = true;
-
-                // create a new piece of the correct color
-                var piece = document.createElement('div');
-                piece.classList.add('piece');
-                piece.classList.add('player' + turn);
-
-                // put the piece at the top of the column
-                column.appendChild(piece);
-                piece.style.left = '1px';
-                piece.style.top = '0';
-
-                // start the animation for having the piece fall down the column
-                move(piece, index, numPieces);
-            }
-        }
-    });
+for (let column of columns) {
+  column.addEventListener(`click`, clickColumn)
 }
 
-// activate the restart button
-restartButton.addEventListener('click', function() {
-    if (!moving) {
-        // clear all pieces from the squares
-        for (var i = 0; i < columns.length; i++) {
-            var column = columns[i];
+function clickColumn() {
+  if (!moving && !gameOver) {
+    let numPieces = getNumPieces(this)
 
-            for (var j = 0; j < column.children.length; j++) {
-                var square = column.children[j];
+    if (numPieces < 6) {
+      moving = true
 
-                // check if the square contains a piece
-                if (square.classList.contains("player1") || square.classList.contains("player2")) {
-                    // clear piece from the square
-                    square.classList.remove("player1");
-                    square.classList.remove("player2");
-                }
-            }
-        }
+      let piece = document.createElement(`div`)
+      piece.classList.add(`piece`, turn.toLowerCase())
+      piece.style.left = `0`
+      piece.style.top = `0`
 
-        // clear pieces from board data
-        for (var x = 0; x < 7; x++) {
-            for (var y = 0; y < 6; y++) {
-                boardData[x][y] = 0;
-            }
-        }
-
-        // restart the game
-        turn = 1;
-        turnLabel.innerHTML = "Red's turn";
-        gameEnded = false;
+      this.appendChild(piece)
+      setInterval(move, 10, piece, numPieces)
     }
-});
+  }
+}
 
 function getNumPieces(column) {
-    var numPieces = 0;
+  let numPieces = 0
 
-    // loop through all the squares
-    for (var i = 0; i < column.children.length; i++) {
-        var square = column.children[i];
-
-        // check if the square contains a piece
-        if (square.classList.contains("player1") || square.classList.contains("player2")) {
-            numPieces++;
-        }
+  for (let square of column.children) {
+    if (square.classList.contains(`red`) || square.classList.contains(`black`)) {
+      numPieces++
     }
+  }
 
-    return numPieces;
+  return numPieces
 }
 
-function move(piece, index, numPieces) {
-    // move the piece down five pixels within its column
-    var top = parseInt(piece.style.top, 10);
-    piece.style.top = top + 5 + 'px';
+function move(piece, numPieces) {
+  piece.style.top = `${piece.offsetTop + 5}px`
 
-    // check if the piece has reached the last empty square within its column
-    if (top < 318.5 - numPieces * 61.5) {
-        // piece has not reached the last empty square, so move it down some more
-        setTimeout(function() {
-            move(piece, index, numPieces);
-        }, 10);
+  if (piece.offsetTop == (5 - numPieces) * 60 + 10) {
+    clearInterval(intervalId)
+
+    let column = piece.parentElement
+
+    piece.remove()
+    column.children[5 - numPieces].classList.add(turn.toLowerCase())
+    moving = false
+
+    if (fourInRow()) {
+      turnParagraph.classList.add(`win`)
+      turnParagraph.innerHTML = `${turn} wins`
+      gameOver = true
+    }
+    else if (boardIsFull()) {
+      turnParagraph.classList.add(`win`)
+      turnParagraph.innerHTML = `Tie game`
+      gameOver = true
     }
     else {
-        // piece has reached the last empty square, so put piece in square
-        var pieceClass = piece.classList.contains("player1") ? "player1" : "player2";
-        piece.remove();
-        columns[index].children[5 - numPieces].classList.add(pieceClass);
-
-        // piece has reached the last empty square, so allow user interaction again
-        moving = false;
-
-        // update board data
-        boardData[index][5 - numPieces] = turn;
-
-        // check for four in a row
-        var winner = checkForWinner();
-
-        if (winner) {
-            // end the game
-            gameEnded = true;
-
-            if (turn == 1) {
-                turnLabel.innerHTML = "Red wins!";
-            }
-            else if (turn == 2) {
-                turnLabel.innerHTML = "Black wins!";
-            }
-        }
-        else {
-            // switch to the other player's turn
-            if (turn == 1) {
-                turn = 2;
-                turnLabel.innerHTML = "Black's turn";
-            }
-            else if (turn == 2) {
-                turn = 1;
-                turnLabel.innerHTML = "Red's turn";
-            }
-        }
+      turn = turn == `Red` ? `Black` : `Red`
+      turnParagraph.innerHTML = `${turn}'s turn`
     }
+  }
 }
 
-function checkForWinner() {
-    // loop through all the squares
-    for (var x = 0; x < 7; x++) {
-        for (var y = 0; y < 6; y++) {
-            var squareData = boardData[x][y];
-
-            if (squareData != 0) { // check if there is a piece in the square
-                // check all directions to see if four in a row
-                var up = boardData[x][y - 1] == squareData && boardData[x][y - 2] == squareData && boardData[x][y - 3] == squareData;
-                var upRight = x <= 3 && boardData[x + 1][y - 1] == squareData && boardData[x + 2][y - 2] == squareData && boardData[x + 3][y - 3] == squareData;
-                var right = x <= 3 && boardData[x + 1][y] == squareData && boardData[x + 2][y] == squareData && boardData[x + 3][y] == squareData;
-                var downRight = x <= 3 && boardData[x + 1][y + 1] == squareData && boardData[x + 2][y + 2] == squareData && boardData[x + 3][y + 3] == squareData;
-                var down = boardData[x][y + 1] == squareData && boardData[x][y + 2] == squareData && boardData[x][y + 3] == squareData;
-                var downLeft = x >= 3 && boardData[x - 1][y + 1] == squareData && boardData[x - 2][y + 2] == squareData && boardData[x - 3][y + 3] == squareData;
-                var left = x >= 3 && boardData[x - 1][y] == squareData && boardData[x - 2][y] == squareData && boardData[x - 3][y] == squareData;
-                var upLeft = x >= 3 && boardData[x - 1][y - 1] == squareData && boardData[x - 2][y - 2] == squareData && boardData[x - 3][y - 3] == squareData;
-
-                if (up || upRight || right || downRight || down || downLeft || left || upLeft) {
-                    // four in a row was found, so return the winner
-                    return squareData;
-                }
+function fourInRow() {
+  for (let square of squares) {
+    if (square.classList.contains(turn.toLowerCase())) {
+      for (let yDirection = -1; yDirection <= 1; yDirection++) {
+        for (let xDirection = -1; xDirection <= 1; xDirection++) {
+          if (xDirection != 0 || yDirection != 0) {
+            if (checkFourInRow(square, xDirection, yDirection)) {
+              return true
             }
+          }
         }
+      }
+    }
+  }
+
+  return false
+}
+
+function checkFourInRow(square, xDirection, yDirection) {
+  let neighbors = []
+
+  for (let i = 1; i <= 3; i++) {
+    let neighbor = getNeighbor(square, i * xDirection, i * yDirection)
+
+    if (neighbor == null || !neighbor.classList.contains(turn.toLowerCase())) {
+      return false
     }
 
-    // four in a row was not found, so return 0
-    return 0;
+    neighbors.push(neighbor)
+  }
+
+  square.classList.add(`highlighted`)
+
+  for (let neighbor of neighbors) {
+    neighbor.classList.add(`highlighted`)
+  }
+
+  return true
+}
+
+function getNeighbor(square, xDiff, yDiff) {
+  let column = square.parentElement // column of square
+  let x // x coordinate of square, set below
+  let y // y coordinate of square, set below
+
+  // loop through columns to determine x
+  for (let i = 0; i < columns.length; i++) {
+    if (columns[i] == column) {
+      x = i // found matching column, so set x
+    }
+  }
+
+  // loop through squares in column to determine y
+  for (let i = 0; i < column.children.length; i++) {
+    if (column.children[i] == square) {
+      y = i // found matching square, so set y
+    }
+  }
+
+  // column of neighbor square
+  let neighborColumn = columns[x + xDiff]
+
+  if (neighborColumn == null) {
+    // column is beyond edge, so no neighbor square
+    return null
+  }
+  else {
+    // if y + yDiff is beyond edge, will be null
+    return neighborColumn.children[y + yDiff]
+  }
+}
+
+function boardIsFull() {
+  for (let square of squares) {
+    if (!square.classList.contains(`red`) && !square.classList.contains(`black`)) {
+      return false
+    }
+  }
+
+  return true
 }
