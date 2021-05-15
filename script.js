@@ -57,13 +57,11 @@ function move(piece, numPieces) {
       turnParagraph.classList.add(`win`)
       turnParagraph.innerHTML = `${turn} wins`
       gameOver = true
-    }
-    else if (boardIsFull()) {
+    } else if (boardIsFull()) {
       turnParagraph.classList.add(`win`)
       turnParagraph.innerHTML = `Tie game`
       gameOver = true
-    }
-    else {
+    } else {
       turn = turn == `Red` ? `Black` : `Red`
       turnParagraph.innerHTML = `${turn}'s turn`
     }
@@ -135,8 +133,7 @@ function getNeighbor(square, xDiff, yDiff) {
   if (neighborColumn == null) {
     // column is beyond edge, so no neighbor square
     return null
-  }
-  else {
+  } else {
     // if y + yDiff is beyond edge, will be null
     return neighborColumn.children[y + yDiff]
   }
